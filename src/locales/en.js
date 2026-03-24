@@ -3,7 +3,8 @@ export default {
     dashboard: 'Dashboard',
     requirements: 'Requirements',
     projects: 'Projects',
-    users: 'Users'
+    users: 'Users',
+    settings: 'Settings'
   },
   common: {
     search: 'Search',
@@ -178,5 +179,19 @@ export default {
     titleRequired: 'Title is required',
     projectRequired: 'Project is required',
     assigneeRequired: 'Assignee is required'
+  },
+  settings: {
+    title: 'Settings',
+    statusManagement: 'Status Management',
+    addStatus: 'Add Status',
+    editStatus: 'Edit Status',
+    deleteStatus: 'Delete Status',
+    statusNameZh: 'Status Name (CN)',
+    statusNameZhPlaceholder: 'Enter status name in Chinese',
+    statusNameEn: 'Status Name (EN)',
+    statusNameEnPlaceholder: 'Enter status name in English',
+    color: 'Color',
+    sortOrder: 'Sort Order',
+    deleteConfirm: 'Are you sure you want to delete this status?'
   }
 }

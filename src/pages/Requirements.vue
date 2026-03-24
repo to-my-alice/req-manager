@@ -2,14 +2,15 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import type { Requirement, Project, Filters, RequirementStatus, Priority } from '@/types'
+import type { Requirement, Project, Filters, RequirementStatus, Priority, Status } from '@/types'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
 const requirements = ref<Requirement[]>([])
 const projects = ref<Project[]>([])
+const statuses = ref<Status[]>([])
 const loading = ref(true)
 
 const filters = ref<Filters>({
@@ -19,7 +20,6 @@ const filters = ref<Filters>({
   search: ''
 })
 
-const statuses: RequirementStatus[] = ['draft', 'in_review', 'approved', 'in_progress', 'completed']
 const priorities: Priority[] = ['low', 'medium', 'high', 'critical']
 
 const fetchRequirements = async (): Promise<void> => {
@@ -48,15 +48,32 @@ const fetchProjects = async (): Promise<void> => {
   }
 }
 
-const getStatusClass = (status: RequirementStatus): string => {
-  const classes: Record<RequirementStatus, string> = {
-    draft: 'status-draft',
-    in_review: 'status-review',
-    approved: 'status-approved',
-    in_progress: 'status-progress',
-    completed: 'status-completed'
+const fetchStatuses = async (): Promise<void> => {
+  try {
+    const res = await fetch('http://localhost:3001/api/statuses')
+    statuses.value = await res.json()
+  } catch (err) {
+    console.error('Failed to fetch statuses:', err)
   }
-  return classes[status] || 'status-draft'
+}
+
+const getStatusClass = (status: RequirementStatus): string => {
+  const statusItem = statuses.value.find(s => s.name_en === status)
+  return statusItem ? '' : 'status-draft'
+}
+
+const getStatusStyle = (status: RequirementStatus): Record<string, string> => {
+  const statusItem = statuses.value.find(s => s.name_en === status)
+  if (statusItem) {
+    return {
+      background: statusItem.color + '20',
+      color: statusItem.color
+    }
+  }
+  return {
+    background: '#f1f5f9',
+    color: '#64748b'
+  }
 }
 
 const getPriorityClass = (priority: Priority): string => {
@@ -70,14 +87,11 @@ const getPriorityClass = (priority: Priority): string => {
 }
 
 const getStatusLabel = (status: RequirementStatus): string => {
-  const labels: Record<RequirementStatus, string> = {
-    draft: t('requirements.draft'),
-    in_review: t('requirements.inReview'),
-    approved: t('requirements.approved'),
-    in_progress: t('requirements.inProgress'),
-    completed: t('requirements.completed')
+  const statusItem = statuses.value.find(s => s.name_en === status)
+  if (statusItem) {
+    return locale.value === 'zh-CN' ? statusItem.name : statusItem.name_en
   }
-  return labels[status] || status
+  return status
 }
 
 const getPriorityLabel = (priority: Priority): string => {
@@ -86,7 +100,7 @@ const getPriorityLabel = (priority: Priority): string => {
 
 const formatDate = (date: string | null | undefined): string => {
   if (!date) return '-'
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(date).toLocaleDateString(locale.value === 'zh-CN' ? 'zh-CN' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 const viewRequirement = (id: string | number): void => {
@@ -118,6 +132,7 @@ onMounted(() => {
   }
   fetchRequirements()
   fetchProjects()
+  fetchStatuses()
 })
 
 // Watch for route changes to update project filter
@@ -160,7 +175,7 @@ watch(() => route.query.project_id, (newProjectId) => {
 
       <select v-model="filters.status" @change="fetchRequirements">
         <option value="">{{ t('requirements.allStatus') }}</option>
-        <option v-for="s in statuses" :key="s" :value="s">{{ getStatusLabel(s) }}</option>
+        <option v-for="s in statuses" :key="s.id" :value="s.name_en">{{ locale === 'zh-CN' ? s.name : s.name_en }}</option>
       </select>
 
       <select v-model="filters.priority" @change="fetchRequirements">
@@ -194,7 +209,7 @@ watch(() => route.query.project_id, (newProjectId) => {
             <tr v-for="req in requirements" :key="req.id" @click="viewRequirement(req.id)">
               <td class="req-id">REQ-{{ String(req.id).padStart(4, '0') }}</td>
               <td class="req-title">{{ req.title }}</td>
-              <td><span class="badge" :class="getStatusClass(req.status)">{{ getStatusLabel(req.status) }}</span></td>
+              <td><span class="badge" :style="getStatusStyle(req.status)">{{ getStatusLabel(req.status) }}</span></td>
               <td><span class="badge" :class="getPriorityClass(req.priority)">{{ getPriorityLabel(req.priority) }}</span></td>
               <td>
                 <div class="assignee" v-if="req.assignee_name">

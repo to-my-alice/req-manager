@@ -9,6 +9,7 @@
 - [Users](#users)
 - [Projects](#projects)
 - [Requirements](#requirements)
+- [Statuses](#statuses)
 - [Requirements Followups](#requirements-followups)
 - [Stats](#stats)
 
@@ -710,6 +711,154 @@ DELETE /followups/:id
 ```json
 {
   "success": true
+}
+```
+
+---
+
+## Statuses
+
+### List All Statuses
+
+```
+GET /statuses
+```
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "name": "草稿",
+    "name_en": "Draft",
+    "color": "#64748b",
+    "sort_order": 1,
+    "created_at": "2026-03-24 12:00:00"
+  }
+]
+```
+
+---
+
+### Get Status by ID
+
+```
+GET /statuses/:id
+```
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| id | integer | Yes | Status ID |
+
+**Response:**
+```json
+{
+  "id": 1,
+  "name": "草稿",
+  "name_en": "Draft",
+  "color": "#64748b",
+  "sort_order": 1,
+  "created_at": "2026-03-24 12:00:00"
+}
+```
+
+---
+
+### Create Status
+
+```
+POST /statuses
+```
+
+**Request Body:**
+```json
+{
+  "name": "新状态",
+  "name_en": "New Status",
+  "color": "#8b5cf6",
+  "sort_order": 6
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | Yes | Status name in Chinese |
+| name_en | string | Yes | Status name in English |
+| color | string | No | Hex color code (default: `#64748b`) |
+| sort_order | integer | No | Sort order (auto-incremented if not provided) |
+
+**Response (201):**
+```json
+{
+  "id": 6,
+  "name": "新状态",
+  "name_en": "New Status",
+  "color": "#8b5cf6",
+  "sort_order": 6,
+  "created_at": "2026-03-24 12:00:00"
+}
+```
+
+---
+
+### Update Status
+
+```
+PUT /statuses/:id
+```
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| id | integer | Yes | Status ID |
+
+**Request Body:**
+```json
+{
+  "name": "更新后的状态",
+  "name_en": "Updated Status",
+  "color": "#ec4899",
+  "sort_order": 3
+}
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "name": "更新后的状态",
+  "name_en": "Updated Status",
+  "color": "#ec4899",
+  "sort_order": 3,
+  "created_at": "2026-03-24 12:00:00"
+}
+```
+
+---
+
+### Delete Status
+
+```
+DELETE /statuses/:id
+```
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| id | integer | Yes | Status ID |
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+**Error (400):**
+```json
+{
+  "error": "Cannot delete status that is used by requirements"
 }
 ```
 

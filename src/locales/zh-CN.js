@@ -3,7 +3,8 @@ export default {
     dashboard: '仪表盘',
     requirements: '需求',
     projects: '项目',
-    users: '用户'
+    users: '用户',
+    settings: '设置'
   },
   common: {
     search: '搜索',
@@ -178,5 +179,19 @@ export default {
     titleRequired: '标题为必填项',
     projectRequired: '项目为必填项',
     assigneeRequired: '负责人为必填项'
+  },
+  settings: {
+    title: '设置',
+    statusManagement: '状态管理',
+    addStatus: '添加状态',
+    editStatus: '编辑状态',
+    deleteStatus: '删除状态',
+    statusNameZh: '状态名称（中文）',
+    statusNameZhPlaceholder: '输入状态中文名称',
+    statusNameEn: '状态名称（英文）',
+    statusNameEnPlaceholder: '输入状态英文名称',
+    color: '颜色',
+    sortOrder: '排序',
+    deleteConfirm: '确定要删除此状态吗？'
   }
 }

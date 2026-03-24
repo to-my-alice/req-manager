@@ -2,9 +2,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import type { RequirementFormData, Project, User, RequirementStatus, Priority } from '@/types'
+import type { RequirementFormData, Project, User, Status, Priority } from '@/types'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
@@ -22,11 +22,11 @@ const form = ref<RequirementFormData>({
 
 const projects = ref<Project[]>([])
 const users = ref<User[]>([])
+const statuses = ref<Status[]>([])
 const loading = ref(true)
 const saving = ref(false)
 const errors = ref<Record<string, string>>({})
 
-const statuses: RequirementStatus[] = ['draft', 'in_review', 'approved', 'in_progress', 'completed']
 const priorities: Priority[] = ['low', 'medium', 'high', 'critical']
 
 interface Errors {
@@ -38,13 +38,15 @@ interface Errors {
 
 const fetchData = async (): Promise<void> => {
   try {
-    const [projectsRes, usersRes] = await Promise.all([
+    const [projectsRes, usersRes, statusesRes] = await Promise.all([
       fetch('http://localhost:3001/api/projects'),
-      fetch('http://localhost:3001/api/users')
+      fetch('http://localhost:3001/api/users'),
+      fetch('http://localhost:3001/api/statuses')
     ])
 
     projects.value = await projectsRes.json()
     users.value = await usersRes.json()
+    statuses.value = await statusesRes.json()
 
     if (isEdit.value) {
       const reqRes = await fetch(`http://localhost:3001/api/requirements/${route.params.id}`)
@@ -210,7 +212,7 @@ onMounted(fetchData)
             <div class="form-group">
               <label for="status">{{ t('requirementForm.statusLabel') }}</label>
               <select id="status" v-model="form.status">
-                <option v-for="s in statuses" :key="s" :value="s">{{ getStatusLabel(s) }}</option>
+                <option v-for="s in statuses" :key="s.id" :value="s.name_en">{{ locale === 'zh-CN' ? s.name : s.name_en }}</option>
               </select>
             </div>
 

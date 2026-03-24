@@ -5,6 +5,7 @@ import RequirementDetail from '../pages/RequirementDetail.vue'
 import RequirementForm from '../pages/RequirementForm.vue'
 import Projects from '../pages/Projects.vue'
 import Users from '../pages/Users.vue'
+import Settings from '../pages/Settings.vue'
 import Login from '../pages/Login.vue'
 
 const routes: RouteRecordRaw[] = [
@@ -16,6 +17,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/requirements/:id/edit', name: 'EditRequirement', component: RequirementForm, meta: { requiresAuth: true } },
   { path: '/projects', name: 'Projects', component: Projects, meta: { requiresAuth: true } },
   { path: '/users', name: 'Users', component: Users, meta: { requiresAuth: true } },
+  { path: '/settings', name: 'Settings', component: Settings, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({

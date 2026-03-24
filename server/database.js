@@ -58,6 +58,15 @@ db.exec(`
     FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE,
     FOREIGN KEY (follower_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS statuses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    name_en TEXT NOT NULL,
+    color TEXT DEFAULT '#64748b',
+    sort_order INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
 // Seed data if tables are empty
@@ -105,6 +114,16 @@ if (reqCount.count === 0) {
   for (const req of requirements) {
     insertReq.run(...req);
   }
+}
+
+const statusCount = db.prepare('SELECT COUNT(*) as count FROM statuses').get();
+if (statusCount.count === 0) {
+  const insertStatus = db.prepare('INSERT INTO statuses (name, name_en, color, sort_order) VALUES (?, ?, ?, ?)');
+  insertStatus.run('草稿', 'draft', '#64748b', 1);
+  insertStatus.run('审核中', 'in_review', '#f59e0b', 2);
+  insertStatus.run('已批准', 'approved', '#2563eb', 3);
+  insertStatus.run('进行中', 'in_progress', '#10b981', 4);
+  insertStatus.run('已完成', 'completed', '#22c55e', 5);
 }
 
 module.exports = db;

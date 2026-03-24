@@ -288,6 +288,51 @@ app.get('/api/stats', (req, res) => {
   res.json({ total, inProgress, completed, overdue, recentRequirements, projectProgress });
 });
 
+// ============ STATUSES ============
+app.get('/api/statuses', (req, res) => {
+  const statuses = db.prepare('SELECT * FROM statuses ORDER BY sort_order ASC').all();
+  res.json(statuses);
+});
+
+app.get('/api/statuses/:id', (req, res) => {
+  const status = db.prepare('SELECT * FROM statuses WHERE id = ?').get(req.params.id);
+  if (!status) return res.status(404).json({ error: 'Status not found' });
+  res.json(status);
+});
+
+app.post('/api/statuses', (req, res) => {
+  const { name, name_en, color, sort_order } = req.body;
+  if (!name || !name_en) return res.status(400).json({ error: 'name and name_en are required' });
+
+  const maxOrder = db.prepare('SELECT MAX(sort_order) as max_order FROM statuses').get();
+  const newSortOrder = sort_order !== undefined ? sort_order : (maxOrder.max_order || 0) + 1;
+
+  const result = db.prepare('INSERT INTO statuses (name, name_en, color, sort_order) VALUES (?, ?, ?, ?)')
+    .run(name, name_en, color || '#64748b', newSortOrder);
+  const newStatus = db.prepare('SELECT * FROM statuses WHERE id = ?').get(result.lastInsertRowid);
+  res.json(newStatus);
+});
+
+app.put('/api/statuses/:id', (req, res) => {
+  const { name, name_en, color, sort_order } = req.body;
+  if (!name || !name_en) return res.status(400).json({ error: 'name and name_en are required' });
+
+  db.prepare('UPDATE statuses SET name = ?, name_en = ?, color = ?, sort_order = ? WHERE id = ?')
+    .run(name, name_en, color || '#64748b', sort_order || 0, req.params.id);
+  const updated = db.prepare('SELECT * FROM statuses WHERE id = ?').get(req.params.id);
+  res.json(updated);
+});
+
+app.delete('/api/statuses/:id', (req, res) => {
+  // Check if status is used by any requirements
+  const used = db.prepare('SELECT COUNT(*) as count FROM requirements WHERE status = ?').get(req.params.id);
+  if (used.count > 0) {
+    return res.status(400).json({ error: 'Cannot delete status that is used by requirements' });
+  }
+  db.prepare('DELETE FROM statuses WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });

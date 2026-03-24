@@ -160,3 +160,20 @@ export interface FollowupFormData {
 
 // Language
 export type Language = 'en' | 'zh-CN'
+
+// Status
+export interface Status {
+  id: string | number
+  name: string
+  name_en: string
+  color: string
+  sort_order: number
+  created_at?: string
+}
+
+export interface StatusFormData {
+  name: string
+  name_en: string
+  color: string
+  sort_order: number
+}

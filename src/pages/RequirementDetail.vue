@@ -2,13 +2,14 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import type { Requirement, RequirementStatus, Priority, Followup, FollowupFormData, User } from '@/types'
+import type { Requirement, RequirementStatus, Priority, Followup, FollowupFormData, User, Status } from '@/types'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
 const requirement = ref<Requirement | null>(null)
+const statuses = ref<Status[]>([])
 const loading = ref(true)
 const deleting = ref(false)
 
@@ -59,15 +60,32 @@ const fetchUsers = async (): Promise<void> => {
   }
 }
 
-const getStatusClass = (status: RequirementStatus): string => {
-  const classes: Record<RequirementStatus, string> = {
-    draft: 'status-draft',
-    in_review: 'status-review',
-    approved: 'status-approved',
-    in_progress: 'status-progress',
-    completed: 'status-completed'
+const fetchStatuses = async (): Promise<void> => {
+  try {
+    const res = await fetch('http://localhost:3001/api/statuses')
+    statuses.value = await res.json()
+  } catch (err) {
+    console.error('Failed to fetch statuses:', err)
   }
-  return classes[status] || 'status-draft'
+}
+
+const getStatusClass = (status: RequirementStatus): string => {
+  const statusItem = statuses.value.find(s => s.name_en === status)
+  return statusItem ? '' : 'status-draft'
+}
+
+const getStatusStyle = (status: RequirementStatus): Record<string, string> => {
+  const statusItem = statuses.value.find(s => s.name_en === status)
+  if (statusItem) {
+    return {
+      background: statusItem.color + '20',
+      color: statusItem.color
+    }
+  }
+  return {
+    background: '#f1f5f9',
+    color: '#64748b'
+  }
 }
 
 const getPriorityClass = (priority: Priority): string => {
@@ -81,14 +99,11 @@ const getPriorityClass = (priority: Priority): string => {
 }
 
 const getStatusLabel = (status: RequirementStatus): string => {
-  const labels: Record<RequirementStatus, string> = {
-    draft: t('requirements.draft'),
-    in_review: t('requirements.inReview'),
-    approved: t('requirements.approved'),
-    in_progress: t('requirements.inProgress'),
-    completed: t('requirements.completed')
+  const statusItem = statuses.value.find(s => s.name_en === status)
+  if (statusItem) {
+    return locale.value === 'zh-CN' ? statusItem.name : statusItem.name_en
   }
-  return labels[status] || status
+  return status
 }
 
 const getPriorityLabel = (priority: Priority): string => {
@@ -97,12 +112,12 @@ const getPriorityLabel = (priority: Priority): string => {
 
 const formatDate = (date: string | null | undefined): string => {
   if (!date) return '-'
-  return new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+  return new Date(date).toLocaleDateString(locale.value === 'zh-CN' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
 const formatDateShort = (date: string | null | undefined): string => {
   if (!date) return '-'
-  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return new Date(date).toLocaleDateString(locale.value === 'zh-CN' ? 'zh-CN' : 'en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 const editRequirement = (): void => {
@@ -224,6 +239,7 @@ onMounted(() => {
   fetchRequirement()
   fetchFollowups()
   fetchUsers()
+  fetchStatuses()
 })
 </script>
 
@@ -251,7 +267,7 @@ onMounted(() => {
           <div class="card">
             <div class="title-section">
               <h1>{{ requirement.title }}</h1>
-              <span class="badge" :class="getStatusClass(requirement.status)">
+              <span class="badge" :style="getStatusStyle(requirement.status)">
                 {{ getStatusLabel(requirement.status) }}
               </span>
             </div>
