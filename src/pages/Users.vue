@@ -41,7 +41,7 @@ const superAdminUser: User = {
   name: 'Alice',
   email: 'alice@admin.com',
   role: 'super_admin',
-  avatar: 'https://i.pravatar.cc/150?u=alice'
+  avatar: '/icon/Alice.png'
 }
 
 // Display users list (includes super admin if logged in as super admin)

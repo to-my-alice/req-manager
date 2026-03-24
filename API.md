@@ -9,6 +9,7 @@
 - [Users](#users)
 - [Projects](#projects)
 - [Requirements](#requirements)
+- [Requirements Followups](#requirements-followups)
 - [Stats](#stats)
 
 ---
@@ -554,6 +555,156 @@ DELETE /requirements/:id
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | id | integer | Yes | Requirement ID |
+
+**Response:**
+```json
+{
+  "success": true
+}
+```
+
+---
+
+## Requirements Followups
+
+### List Follow-ups for Requirement
+
+```
+GET /requirements/:id/followups
+```
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| id | integer | Yes | Requirement ID |
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "requirement_id": 1,
+    "follower_id": 1,
+    "follower_name": "Alice Chen",
+    "follower_avatar": "https://i.pravatar.cc/150?u=alice",
+    "follow_date": "2026-03-24",
+    "location": "Conference Room A",
+    "content": "Discussed project timeline and resource allocation",
+    "conclusion": "Agreed on Q2 delivery schedule",
+    "next_follow_date": "2026-03-31",
+    "created_at": "2026-03-24 12:00:00",
+    "updated_at": "2026-03-24 12:00:00"
+  }
+]
+```
+
+---
+
+### Create Follow-up
+
+```
+POST /requirements/:id/followups
+```
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| id | integer | Yes | Requirement ID |
+
+**Request Body:**
+```json
+{
+  "follower_id": 1,
+  "follow_date": "2026-03-24",
+  "location": "Conference Room A",
+  "content": "Discussed project timeline and resource allocation",
+  "conclusion": "Agreed on Q2 delivery schedule",
+  "next_follow_date": "2026-03-31"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| follower_id | integer | Yes | User ID of the follower |
+| follow_date | string | Yes | Follow-up date (YYYY-MM-DD format) |
+| location | string | No | Location of the follow-up |
+| content | string | Yes | Communication content |
+| conclusion | string | No | Communication conclusion |
+| next_follow_date | string | No | Next follow-up date (YYYY-MM-DD format) |
+
+**Response (201):**
+```json
+{
+  "id": 1,
+  "requirement_id": 1,
+  "follower_id": 1,
+  "follower_name": "Alice Chen",
+  "follower_avatar": "https://i.pravatar.cc/150?u=alice",
+  "follow_date": "2026-03-24",
+  "location": "Conference Room A",
+  "content": "Discussed project timeline and resource allocation",
+  "conclusion": "Agreed on Q2 delivery schedule",
+  "next_follow_date": "2026-03-31",
+  "created_at": "2026-03-24 12:00:00",
+  "updated_at": "2026-03-24 12:00:00"
+}
+```
+
+---
+
+### Update Follow-up
+
+```
+PUT /followups/:id
+```
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| id | integer | Yes | Follow-up ID |
+
+**Request Body:**
+```json
+{
+  "follower_id": 2,
+  "follow_date": "2026-03-25",
+  "location": "Online Meeting",
+  "content": "Updated discussion points",
+  "conclusion": "Revised timeline",
+  "next_follow_date": "2026-04-01"
+}
+```
+
+**Response:**
+```json
+{
+  "id": 1,
+  "requirement_id": 1,
+  "follower_id": 2,
+  "follower_name": "Bob Wilson",
+  "follower_avatar": "https://i.pravatar.cc/150?u=bob",
+  "follow_date": "2026-03-25",
+  "location": "Online Meeting",
+  "content": "Updated discussion points",
+  "conclusion": "Revised timeline",
+  "next_follow_date": "2026-04-01",
+  "created_at": "2026-03-24 12:00:00",
+  "updated_at": "2026-03-25 10:00:00"
+}
+```
+
+---
+
+### Delete Follow-up
+
+```
+DELETE /followups/:id
+```
+
+**Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| id | integer | Yes | Follow-up ID |
 
 **Response:**
 ```json

@@ -46,9 +46,9 @@ const handleLogin = async (): Promise<void> => {
   if (username.value === admin.username && password.value === admin.password) {
     // Store login state
     const currentUser: CurrentUser = {
-      name: 'Alice Chen',
+      name: 'Alice',
       role: 'Super Admin',
-      avatar: 'https://i.pravatar.cc/150?u=alice'
+      avatar: '/icon/Alice.png'
     }
     localStorage.setItem('isLoggedIn', 'true')
     localStorage.setItem('currentUser', JSON.stringify(currentUser))

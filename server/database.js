@@ -64,7 +64,7 @@ db.exec(`
 const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
 if (userCount.count === 0) {
   const insertUser = db.prepare('INSERT INTO users (name, email, role, avatar) VALUES (?, ?, ?, ?)');
-  insertUser.run('Alice Chen', 'alice@example.com', 'admin', 'https://i.pravatar.cc/150?u=alice');
+  insertUser.run('Alice Chen', 'alice@example.com', 'admin', '/icon/Alice.png');
   insertUser.run('Bob Wilson', 'bob@example.com', 'manager', 'https://i.pravatar.cc/150?u=bob');
   insertUser.run('Carol Smith', 'carol@example.com', 'member', 'https://i.pravatar.cc/150?u=carol');
   insertUser.run('David Lee', 'david@example.com', 'member', 'https://i.pravatar.cc/150?u=david');
