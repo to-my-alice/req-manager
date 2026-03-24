@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import type { SuperAdminCredentials, CurrentUser } from '@/types'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -11,12 +12,12 @@ const password = ref('')
 const errorMessage = ref('')
 const isLoading = ref(false)
 
-const DEFAULT_ADMIN = {
+const DEFAULT_ADMIN: SuperAdminCredentials = {
   username: 'Alice',
   password: 'Aa135246@'
 }
 
-const getAdminCredentials = () => {
+const getAdminCredentials = (): SuperAdminCredentials => {
   const storedPassword = localStorage.getItem('adminPassword')
   return {
     username: DEFAULT_ADMIN.username,
@@ -28,7 +29,7 @@ const isFormValid = computed(() => {
   return username.value.trim() !== '' && password.value !== ''
 })
 
-const handleLogin = async () => {
+const handleLogin = async (): Promise<void> => {
   errorMessage.value = ''
 
   if (!isFormValid.value) {
@@ -44,12 +45,13 @@ const handleLogin = async () => {
   const admin = getAdminCredentials()
   if (username.value === admin.username && password.value === admin.password) {
     // Store login state
-    localStorage.setItem('isLoggedIn', 'true')
-    localStorage.setItem('currentUser', JSON.stringify({
+    const currentUser: CurrentUser = {
       name: 'Alice Chen',
       role: 'Super Admin',
       avatar: 'https://i.pravatar.cc/150?u=alice'
-    }))
+    }
+    localStorage.setItem('isLoggedIn', 'true')
+    localStorage.setItem('currentUser', JSON.stringify(currentUser))
     router.push('/')
   } else {
     errorMessage.value = t('login.errorInvalid')

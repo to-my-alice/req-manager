@@ -43,6 +43,21 @@ db.exec(`
     FOREIGN KEY (project_id) REFERENCES projects(id),
     FOREIGN KEY (assignee_id) REFERENCES users(id)
   );
+
+  CREATE TABLE IF NOT EXISTS requirements_followups (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    requirement_id INTEGER NOT NULL,
+    follower_id INTEGER NOT NULL,
+    follow_date DATE NOT NULL,
+    location TEXT,
+    content TEXT NOT NULL,
+    conclusion TEXT,
+    next_follow_date DATE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (requirement_id) REFERENCES requirements(id) ON DELETE CASCADE,
+    FOREIGN KEY (follower_id) REFERENCES users(id)
+  );
 `);
 
 // Seed data if tables are empty

@@ -1,22 +1,35 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import type { Requirement, ProjectProgress, RequirementStatus, Priority } from '@/types'
 
 const { t } = useI18n()
 const router = useRouter()
 
-const stats = ref({ total: 0, inProgress: 0, completed: 0, overdue: 0 })
-const recentRequirements = ref([])
-const projectProgress = ref([])
+interface Stats {
+  total: number
+  inProgress: number
+  completed: number
+  overdue: number
+}
+
+const stats = ref<Stats>({ total: 0, inProgress: 0, completed: 0, overdue: 0 })
+const recentRequirements = ref<Requirement[]>([])
+const projectProgress = ref<ProjectProgress[]>([])
 const loading = ref(true)
 
-const fetchStats = async () => {
+const fetchStats = async (): Promise<void> => {
   try {
     const res = await fetch('http://localhost:3001/api/stats')
     const data = await res.json()
-    stats.value = { total: data.total, inProgress: data.inProgress, completed: data.completed, overdue: data.overdue }
-    recentRequirements.value = data.recentRequirements.map(r => ({
+    stats.value = {
+      total: data.total,
+      inProgress: data.inProgress,
+      completed: data.completed,
+      overdue: data.overdue
+    }
+    recentRequirements.value = data.recentRequirements.map((r: Requirement) => ({
       ...r,
       tags: typeof r.tags === 'string' ? JSON.parse(r.tags) : r.tags
     }))
@@ -28,8 +41,8 @@ const fetchStats = async () => {
   }
 }
 
-const getStatusClass = (status) => {
-  const classes = {
+const getStatusClass = (status: RequirementStatus): string => {
+  const classes: Record<RequirementStatus, string> = {
     draft: 'status-draft',
     in_review: 'status-review',
     approved: 'status-approved',
@@ -39,8 +52,8 @@ const getStatusClass = (status) => {
   return classes[status] || 'status-draft'
 }
 
-const getPriorityClass = (priority) => {
-  const classes = {
+const getPriorityClass = (priority: Priority): string => {
+  const classes: Record<Priority, string> = {
     low: 'priority-low',
     medium: 'priority-medium',
     high: 'priority-high',
@@ -49,17 +62,17 @@ const getPriorityClass = (priority) => {
   return classes[priority] || 'priority-medium'
 }
 
-const getProgressPercent = (project) => {
+const getProgressPercent = (project: ProjectProgress): number => {
   if (!project.total) return 0
   return Math.round((project.completed / project.total) * 100)
 }
 
-const viewRequirement = (id) => {
+const viewRequirement = (id: string | number): void => {
   router.push(`/requirements/${id}`)
 }
 
-const getStatusLabel = (status) => {
-  const labels = {
+const getStatusLabel = (status: RequirementStatus): string => {
+  const labels: Record<RequirementStatus, string> = {
     draft: t('requirements.draft'),
     in_review: t('requirements.inReview'),
     approved: t('requirements.approved'),
@@ -69,7 +82,7 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
-const getPriorityLabel = (priority) => {
+const getPriorityLabel = (priority: Priority): string => {
   return t(`requirements.${priority}`)
 }
 

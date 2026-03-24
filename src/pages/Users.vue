@@ -1,31 +1,32 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { User, UserFormData, UserRole, CurrentUser } from '@/types'
 
 const { t } = useI18n()
 
-const users = ref([])
+const users = ref<User[]>([])
 const loading = ref(true)
 const showModal = ref(false)
-const editingUser = ref(null)
-const deletingUser = ref(null)
+const editingUser = ref<User | null>(null)
+const deletingUser = ref<User | null>(null)
 
-const form = ref({
+const form = ref<UserFormData>({
   name: '',
   email: '',
   role: 'member',
   avatar: ''
 })
 
-const roles = ['admin', 'manager', 'member']
-const errors = ref({})
+const roles: Exclude<UserRole, 'super_admin'>[] = ['admin', 'manager', 'member']
+const errors = ref<Record<string, string>>({})
 
 // Check if current user is super admin
 const isSuperAdmin = computed(() => {
   const storedUser = localStorage.getItem('currentUser')
   if (storedUser) {
     try {
-      const user = JSON.parse(storedUser)
+      const user: CurrentUser = JSON.parse(storedUser)
       return user.role === 'Super Admin'
     } catch (e) {
       return false
@@ -35,7 +36,7 @@ const isSuperAdmin = computed(() => {
 })
 
 // Super admin user (Alice)
-const superAdminUser = {
+const superAdminUser: User = {
   id: 'super-admin',
   name: 'Alice',
   email: 'alice@admin.com',
@@ -52,11 +53,11 @@ const displayUsers = computed(() => {
 })
 
 // Check if user is super admin
-const isUserSuperAdmin = (user) => {
+const isUserSuperAdmin = (user: User): boolean => {
   return user.role === 'super_admin'
 }
 
-const fetchUsers = async () => {
+const fetchUsers = async (): Promise<void> => {
   try {
     const res = await fetch('http://localhost:3001/api/users')
     users.value = await res.json()
@@ -67,26 +68,26 @@ const fetchUsers = async () => {
   }
 }
 
-const openCreateModal = () => {
+const openCreateModal = (): void => {
   editingUser.value = null
   form.value = { name: '', email: '', role: 'member', avatar: '' }
   errors.value = {}
   showModal.value = true
 }
 
-const openEditModal = (user) => {
+const openEditModal = (user: User): void => {
   editingUser.value = user
-  form.value = { name: user.name, email: user.email, role: user.role, avatar: user.avatar || '' }
+  form.value = { name: user.name, email: user.email, role: user.role as Exclude<UserRole, 'super_admin'>, avatar: user.avatar || '' }
   errors.value = {}
   showModal.value = true
 }
 
-const closeModal = () => {
+const closeModal = (): void => {
   showModal.value = false
   editingUser.value = null
 }
 
-const validate = () => {
+const validate = (): boolean => {
   errors.value = {}
   if (!form.value.name.trim()) errors.value.name = t('validation.nameRequired')
   if (!form.value.email.trim()) errors.value.email = t('validation.emailRequired')
@@ -94,7 +95,7 @@ const validate = () => {
   return Object.keys(errors.value).length === 0
 }
 
-const saveUser = async () => {
+const saveUser = async (): Promise<void> => {
   if (!validate()) return
 
   try {
@@ -123,15 +124,15 @@ const saveUser = async () => {
   }
 }
 
-const confirmDelete = (user) => {
+const confirmDelete = (user: User): void => {
   deletingUser.value = user
 }
 
-const cancelDelete = () => {
+const cancelDelete = (): void => {
   deletingUser.value = null
 }
 
-const deleteUser = async () => {
+const deleteUser = async (): Promise<void> => {
   if (!deletingUser.value) return
 
   try {
@@ -152,15 +153,15 @@ const deleteUser = async () => {
   }
 }
 
-const getRoleClass = (role) => {
+const getRoleClass = (role: UserRole): string => {
   return `role-${role}`
 }
 
-const getRoleLabel = (role) => {
+const getRoleLabel = (role: UserRole): string => {
   return t(`users.${role}`)
 }
 
-const getInitials = (name) => {
+const getInitials = (name: string): string => {
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 

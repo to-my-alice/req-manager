@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import type { RequirementFormData, Project, User, RequirementStatus, Priority } from '@/types'
 
 const { t } = useI18n()
 const router = useRouter()
@@ -9,7 +10,7 @@ const route = useRoute()
 
 const isEdit = computed(() => !!route.params.id)
 
-const form = ref({
+const form = ref<RequirementFormData>({
   title: '',
   description: '',
   status: 'draft',
@@ -19,16 +20,23 @@ const form = ref({
   due_date: ''
 })
 
-const projects = ref([])
-const users = ref([])
+const projects = ref<Project[]>([])
+const users = ref<User[]>([])
 const loading = ref(true)
 const saving = ref(false)
-const errors = ref({})
+const errors = ref<Record<string, string>>({})
 
-const statuses = ['draft', 'in_review', 'approved', 'in_progress', 'completed']
-const priorities = ['low', 'medium', 'high', 'critical']
+const statuses: RequirementStatus[] = ['draft', 'in_review', 'approved', 'in_progress', 'completed']
+const priorities: Priority[] = ['low', 'medium', 'high', 'critical']
 
-const fetchData = async () => {
+interface Errors {
+  title?: string
+  project_id?: string
+  assignee_id?: string
+  [key: string]: string | undefined
+}
+
+const fetchData = async (): Promise<void> => {
   try {
     const [projectsRes, usersRes] = await Promise.all([
       fetch('http://localhost:3001/api/projects'),
@@ -58,8 +66,8 @@ const fetchData = async () => {
   }
 }
 
-const validate = () => {
-  errors.value = {}
+const validate = (): boolean => {
+  errors.value = {} as Errors
   if (!form.value.title.trim()) {
     errors.value.title = t('validation.titleRequired')
   }
@@ -72,7 +80,7 @@ const validate = () => {
   return Object.keys(errors.value).length === 0
 }
 
-const saveRequirement = async () => {
+const saveRequirement = async (): Promise<void> => {
   if (!validate()) return
 
   saving.value = true
@@ -98,12 +106,12 @@ const saveRequirement = async () => {
   }
 }
 
-const cancel = () => {
+const cancel = (): void => {
   router.back()
 }
 
-const getStatusLabel = (status) => {
-  const labels = {
+const getStatusLabel = (status: RequirementStatus): string => {
+  const labels: Record<RequirementStatus, string> = {
     draft: t('requirements.draft'),
     in_review: t('requirements.inReview'),
     approved: t('requirements.approved'),
@@ -113,7 +121,7 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
-const getPriorityLabel = (priority) => {
+const getPriorityLabel = (priority: Priority): string => {
   return t(`requirements.${priority}`)
 }
 

@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import Dashboard from '../pages/Dashboard.vue'
 import Requirements from '../pages/Requirements.vue'
 import RequirementDetail from '../pages/RequirementDetail.vue'
@@ -7,7 +7,7 @@ import Projects from '../pages/Projects.vue'
 import Users from '../pages/Users.vue'
 import Login from '../pages/Login.vue'
 
-const routes = [
+const routes: RouteRecordRaw[] = [
   { path: '/login', name: 'Login', component: Login },
   { path: '/', name: 'Dashboard', component: Dashboard, meta: { requiresAuth: true } },
   { path: '/requirements', name: 'Requirements', component: Requirements, meta: { requiresAuth: true } },

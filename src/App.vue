@@ -1,7 +1,8 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import type { CurrentUser, SuperAdminCredentials, NavItem, Language } from '@/types'
 
 const { t, locale } = useI18n()
 const router = useRouter()
@@ -19,7 +20,7 @@ const passwordError = ref('')
 
 // Initialize currentUser from localStorage immediately
 const storedUser = localStorage.getItem('currentUser')
-const currentUser = ref(storedUser ? JSON.parse(storedUser) : {
+const currentUser = ref<CurrentUser>(storedUser ? JSON.parse(storedUser) : {
   name: 'Alice Chen',
   role: 'Super Admin',
   avatar: 'https://i.pravatar.cc/150?u=alice'
@@ -38,34 +39,34 @@ watch(() => route.path, () => {
   }
 }, { immediate: true })
 
-const SUPER_ADMIN = {
+const SUPER_ADMIN = ref<SuperAdminCredentials>({
   username: 'Alice',
-  password: 'Aa135246@'
-}
+  password: localStorage.getItem('adminPassword') || 'Aa135246@'
+})
 
-const navItems = [
+const navItems: NavItem[] = [
   { name: 'nav.dashboard', path: '/', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
   { name: 'nav.requirements', path: '/requirements', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
   { name: 'nav.projects', path: '/projects', icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z' },
   { name: 'nav.users', path: '/users', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
 ]
 
-const languages = [
+const languages: { code: Language; label: string }[] = [
   { code: 'en', label: 'English' },
   { code: 'zh-CN', label: '中文' },
 ]
 
-const isActive = (path) => {
+const isActive = (path: string): boolean => {
   if (path === '/') return route.path === '/'
   return route.path.startsWith(path)
 }
 
-const changeLanguage = (code) => {
+const changeLanguage = (code: Language): void => {
   locale.value = code
   localStorage.setItem('locale', code)
 }
 
-const handleLogout = () => {
+const handleLogout = (): void => {
   localStorage.removeItem('isLoggedIn')
   localStorage.removeItem('currentUser')
   isLoggedIn.value = false
@@ -73,7 +74,7 @@ const handleLogout = () => {
   router.push('/login')
 }
 
-const openPasswordModal = () => {
+const openPasswordModal = (): void => {
   showUserMenu.value = false
   oldPassword.value = ''
   newPassword.value = ''
@@ -82,10 +83,10 @@ const openPasswordModal = () => {
   showPasswordModal.value = true
 }
 
-const handleChangePassword = () => {
+const handleChangePassword = (): void => {
   passwordError.value = ''
 
-  if (oldPassword.value !== SUPER_ADMIN.password) {
+  if (oldPassword.value !== SUPER_ADMIN.value.password) {
     passwordError.value = t('login.oldPasswordError')
     return
   }
@@ -101,14 +102,14 @@ const handleChangePassword = () => {
   }
 
   // Update password
-  SUPER_ADMIN.password = newPassword.value
+  SUPER_ADMIN.value.password = newPassword.value
   localStorage.setItem('adminPassword', newPassword.value)
 
   showPasswordModal.value = false
   alert(t('login.passwordChangedSuccess'))
 }
 
-const closePasswordModal = () => {
+const closePasswordModal = (): void => {
   showPasswordModal.value = false
 }
 </script>

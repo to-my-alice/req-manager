@@ -1,27 +1,28 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import type { Requirement, Project, Filters, RequirementStatus, Priority } from '@/types'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
-const requirements = ref([])
-const projects = ref([])
+const requirements = ref<Requirement[]>([])
+const projects = ref<Project[]>([])
 const loading = ref(true)
 
-const filters = ref({
+const filters = ref<Filters>({
   status: '',
   priority: '',
   project_id: '',
   search: ''
 })
 
-const statuses = ['draft', 'in_review', 'approved', 'in_progress', 'completed']
-const priorities = ['low', 'medium', 'high', 'critical']
+const statuses: RequirementStatus[] = ['draft', 'in_review', 'approved', 'in_progress', 'completed']
+const priorities: Priority[] = ['low', 'medium', 'high', 'critical']
 
-const fetchRequirements = async () => {
+const fetchRequirements = async (): Promise<void> => {
   try {
     const params = new URLSearchParams()
     if (filters.value.status) params.append('status', filters.value.status)
@@ -38,7 +39,7 @@ const fetchRequirements = async () => {
   }
 }
 
-const fetchProjects = async () => {
+const fetchProjects = async (): Promise<void> => {
   try {
     const res = await fetch('http://localhost:3001/api/projects')
     projects.value = await res.json()
@@ -47,8 +48,8 @@ const fetchProjects = async () => {
   }
 }
 
-const getStatusClass = (status) => {
-  const classes = {
+const getStatusClass = (status: RequirementStatus): string => {
+  const classes: Record<RequirementStatus, string> = {
     draft: 'status-draft',
     in_review: 'status-review',
     approved: 'status-approved',
@@ -58,8 +59,8 @@ const getStatusClass = (status) => {
   return classes[status] || 'status-draft'
 }
 
-const getPriorityClass = (priority) => {
-  const classes = {
+const getPriorityClass = (priority: Priority): string => {
+  const classes: Record<Priority, string> = {
     low: 'priority-low',
     medium: 'priority-medium',
     high: 'priority-high',
@@ -68,8 +69,8 @@ const getPriorityClass = (priority) => {
   return classes[priority] || 'priority-medium'
 }
 
-const getStatusLabel = (status) => {
-  const labels = {
+const getStatusLabel = (status: RequirementStatus): string => {
+  const labels: Record<RequirementStatus, string> = {
     draft: t('requirements.draft'),
     in_review: t('requirements.inReview'),
     approved: t('requirements.approved'),
@@ -79,24 +80,24 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
-const getPriorityLabel = (priority) => {
+const getPriorityLabel = (priority: Priority): string => {
   return t(`requirements.${priority}`)
 }
 
-const formatDate = (date) => {
+const formatDate = (date: string | null | undefined): string => {
   if (!date) return '-'
   return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
-const viewRequirement = (id) => {
+const viewRequirement = (id: string | number): void => {
   router.push(`/requirements/${id}`)
 }
 
-const createRequirement = () => {
+const createRequirement = (): void => {
   router.push('/requirements/new')
 }
 
-const clearFilters = () => {
+const clearFilters = (): void => {
   filters.value = { status: '', priority: '', project_id: '', search: '' }
   // Update URL to remove project_id if present
   if (route.query.project_id) {
@@ -113,7 +114,7 @@ const hasActiveFilters = computed(() => {
 onMounted(() => {
   // Check for project_id in URL query params
   if (route.query.project_id) {
-    filters.value.project_id = route.query.project_id
+    filters.value.project_id = route.query.project_id as string
   }
   fetchRequirements()
   fetchProjects()
@@ -122,7 +123,7 @@ onMounted(() => {
 // Watch for route changes to update project filter
 watch(() => route.query.project_id, (newProjectId) => {
   if (newProjectId) {
-    filters.value.project_id = newProjectId
+    filters.value.project_id = newProjectId as string
     fetchRequirements()
   } else if (filters.value.project_id) {
     // Clear project filter when navigating without project_id

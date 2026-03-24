@@ -1,17 +1,34 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import type { Requirement, RequirementStatus, Priority, Followup, FollowupFormData, User } from '@/types'
 
 const { t } = useI18n()
 const router = useRouter()
 const route = useRoute()
 
-const requirement = ref(null)
+const requirement = ref<Requirement | null>(null)
 const loading = ref(true)
 const deleting = ref(false)
 
-const fetchRequirement = async () => {
+// Followups
+const followups = ref<Followup[]>([])
+const users = ref<User[]>([])
+const showFollowupModal = ref(false)
+const editingFollowup = ref<Followup | null>(null)
+const deletingFollowup = ref<Followup | null>(null)
+
+const followupForm = ref<FollowupFormData>({
+  follower_id: '',
+  follow_date: '',
+  location: '',
+  content: '',
+  conclusion: '',
+  next_follow_date: ''
+})
+
+const fetchRequirement = async (): Promise<void> => {
   try {
     const res = await fetch(`http://localhost:3001/api/requirements/${route.params.id}`)
     if (!res.ok) throw new Error('Not found')
@@ -24,8 +41,26 @@ const fetchRequirement = async () => {
   }
 }
 
-const getStatusClass = (status) => {
-  const classes = {
+const fetchFollowups = async (): Promise<void> => {
+  try {
+    const res = await fetch(`http://localhost:3001/api/requirements/${route.params.id}/followups`)
+    followups.value = await res.json()
+  } catch (err) {
+    console.error('Failed to fetch followups:', err)
+  }
+}
+
+const fetchUsers = async (): Promise<void> => {
+  try {
+    const res = await fetch('http://localhost:3001/api/users')
+    users.value = await res.json()
+  } catch (err) {
+    console.error('Failed to fetch users:', err)
+  }
+}
+
+const getStatusClass = (status: RequirementStatus): string => {
+  const classes: Record<RequirementStatus, string> = {
     draft: 'status-draft',
     in_review: 'status-review',
     approved: 'status-approved',
@@ -35,8 +70,8 @@ const getStatusClass = (status) => {
   return classes[status] || 'status-draft'
 }
 
-const getPriorityClass = (priority) => {
-  const classes = {
+const getPriorityClass = (priority: Priority): string => {
+  const classes: Record<Priority, string> = {
     low: 'priority-low',
     medium: 'priority-medium',
     high: 'priority-high',
@@ -45,8 +80,8 @@ const getPriorityClass = (priority) => {
   return classes[priority] || 'priority-medium'
 }
 
-const getStatusLabel = (status) => {
-  const labels = {
+const getStatusLabel = (status: RequirementStatus): string => {
+  const labels: Record<RequirementStatus, string> = {
     draft: t('requirements.draft'),
     in_review: t('requirements.inReview'),
     approved: t('requirements.approved'),
@@ -56,20 +91,25 @@ const getStatusLabel = (status) => {
   return labels[status] || status
 }
 
-const getPriorityLabel = (priority) => {
+const getPriorityLabel = (priority: Priority): string => {
   return t(`requirements.${priority}`)
 }
 
-const formatDate = (date) => {
+const formatDate = (date: string | null | undefined): string => {
   if (!date) return '-'
   return new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 }
 
-const editRequirement = () => {
+const formatDateShort = (date: string | null | undefined): string => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+const editRequirement = (): void => {
   router.push(`/requirements/${route.params.id}/edit`)
 }
 
-const deleteRequirement = async () => {
+const deleteRequirement = async (): Promise<void> => {
   if (!confirm(t('requirementDetail.deleteConfirm'))) return
 
   deleting.value = true
@@ -82,11 +122,109 @@ const deleteRequirement = async () => {
   }
 }
 
-const goBack = () => {
+const goBack = (): void => {
   router.push('/requirements')
 }
 
-onMounted(fetchRequirement)
+// Followup methods
+const openAddFollowupModal = (): void => {
+  editingFollowup.value = null
+  const now = new Date().toISOString().split('T')[0]
+  followupForm.value = {
+    follower_id: '',
+    follow_date: now,
+    location: '',
+    content: '',
+    conclusion: '',
+    next_follow_date: ''
+  }
+  showFollowupModal.value = true
+}
+
+const openEditFollowupModal = (followup: Followup): void => {
+  editingFollowup.value = followup
+  followupForm.value = {
+    follower_id: String(followup.follower_id),
+    follow_date: followup.follow_date,
+    location: followup.location || '',
+    content: followup.content,
+    conclusion: followup.conclusion || '',
+    next_follow_date: followup.next_follow_date || ''
+  }
+  showFollowupModal.value = true
+}
+
+const closeFollowupModal = (): void => {
+  showFollowupModal.value = false
+  editingFollowup.value = null
+}
+
+const saveFollowup = async (): Promise<void> => {
+  if (!followupForm.value.follower_id || !followupForm.value.follow_date || !followupForm.value.content) {
+    alert('Please fill in all required fields')
+    return
+  }
+
+  try {
+    const url = editingFollowup.value
+      ? `http://localhost:3001/api/followups/${editingFollowup.value.id}`
+      : `http://localhost:3001/api/requirements/${route.params.id}/followups`
+
+    const method = editingFollowup.value ? 'PUT' : 'POST'
+
+    const res = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(followupForm.value)
+    })
+
+    if (!res.ok) {
+      const err = await res.json()
+      alert(err.error || 'Failed to save followup')
+      return
+    }
+
+    closeFollowupModal()
+    fetchFollowups()
+  } catch (err) {
+    console.error('Failed to save followup:', err)
+  }
+}
+
+const confirmDeleteFollowup = (followup: Followup): void => {
+  deletingFollowup.value = followup
+}
+
+const cancelDeleteFollowup = (): void => {
+  deletingFollowup.value = null
+}
+
+const deleteFollowup = async (): Promise<void> => {
+  if (!deletingFollowup.value) return
+
+  try {
+    const res = await fetch(`http://localhost:3001/api/followups/${deletingFollowup.value.id}`, {
+      method: 'DELETE'
+    })
+
+    if (!res.ok) {
+      const err = await res.json()
+      alert(err.error || 'Failed to delete followup')
+      return
+    }
+
+    deletingFollowup.value = null
+    fetchFollowups()
+  } catch (err) {
+    console.error('Failed to delete followup:', err)
+  }
+}
+
+onMounted(() => {
+  fetchRequirement()
+  fetchFollowups()
+  fetchUsers()
+})
 </script>
 
 <template>
@@ -127,6 +265,67 @@ onMounted(fetchRequirement)
               <h3>{{ t('requirementDetail.tags') }}</h3>
               <div class="tag-list">
                 <span v-for="tag in requirement.tags" :key="tag" class="tag">{{ tag }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Followups Section -->
+          <div class="card followups-card">
+            <div class="followups-header">
+              <h3>{{ t('requirementDetail.followups') || 'Follow-ups' }}</h3>
+              <button class="btn-primary-sm" @click="openAddFollowupModal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 4v16m8-8H4" />
+                </svg>
+                {{ t('requirementDetail.addFollowup') || 'Add Follow-up' }}
+              </button>
+            </div>
+
+            <div v-if="followups.length === 0" class="no-followups">
+              {{ t('requirementDetail.noFollowups') || 'No follow-ups yet' }}
+            </div>
+
+            <div v-else class="followups-list">
+              <div v-for="followup in followups" :key="followup.id" class="followup-item">
+                <div class="followup-avatar">
+                  <img v-if="followup.follower_avatar" :src="followup.follower_avatar" :alt="followup.follower_name" />
+                  <span v-else class="initials">{{ followup.follower_name?.charAt(0) || '?' }}</span>
+                </div>
+                <div class="followup-content">
+                  <div class="followup-header">
+                    <span class="followup-name">{{ followup.follower_name }}</span>
+                    <span class="followup-date">{{ formatDateShort(followup.follow_date) }}</span>
+                  </div>
+                  <div v-if="followup.location" class="followup-location">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    </svg>
+                    {{ followup.location }}
+                  </div>
+                  <div class="followup-body">
+                    <p><strong>{{ t('requirementDetail.communicationContent') || 'Content' }}:</strong> {{ followup.content }}</p>
+                    <p v-if="followup.conclusion"><strong>{{ t('requirementDetail.communicationConclusion') || 'Conclusion' }}:</strong> {{ followup.conclusion }}</p>
+                    <p v-if="followup.next_follow_date" class="next-follow">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      {{ t('requirementDetail.nextFollowup') || 'Next follow-up' }}: {{ formatDateShort(followup.next_follow_date) }}
+                    </p>
+                  </div>
+                </div>
+                <div class="followup-actions">
+                  <button class="btn-icon-sm" @click="openEditFollowupModal(followup)" :title="t('common.edit')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  </button>
+                  <button class="btn-icon-sm danger" @click="confirmDeleteFollowup(followup)" :title="t('common.delete')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -175,6 +374,74 @@ onMounted(fetchRequirement)
               <span class="meta-value">{{ formatDate(requirement.updated_at) }}</span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Followup Modal -->
+    <div v-if="showFollowupModal" class="modal-overlay" @click.self="closeFollowupModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>{{ editingFollowup ? (t('requirementDetail.editFollowup') || 'Edit Follow-up') : (t('requirementDetail.addFollowup') || 'Add Follow-up') }}</h2>
+          <button class="btn-close" @click="closeFollowupModal">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>{{ t('requirementDetail.follower') || 'Follower' }} <span class="required">*</span></label>
+            <select v-model="followupForm.follower_id">
+              <option value="">{{ t('requirementDetail.selectFollower') || 'Select follower' }}</option>
+              <option v-for="user in users" :key="user.id" :value="String(user.id)">{{ user.name }}</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>{{ t('requirementDetail.followDate') || 'Follow-up Date' }} <span class="required">*</span></label>
+            <input type="date" v-model="followupForm.follow_date" />
+          </div>
+
+          <div class="form-group">
+            <label>{{ t('requirementDetail.location') || 'Location' }}</label>
+            <input type="text" v-model="followupForm.location" :placeholder="t('requirementDetail.locationPlaceholder') || 'Enter location'" />
+          </div>
+
+          <div class="form-group">
+            <label>{{ t('requirementDetail.communicationContent') || 'Communication Content' }} <span class="required">*</span></label>
+            <textarea v-model="followupForm.content" rows="4" :placeholder="t('requirementDetail.contentPlaceholder') || 'Enter communication content'"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>{{ t('requirementDetail.communicationConclusion') || 'Communication Conclusion' }}</label>
+            <textarea v-model="followupForm.conclusion" rows="3" :placeholder="t('requirementDetail.conclusionPlaceholder') || 'Enter conclusion'"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>{{ t('requirementDetail.nextFollowup') || 'Next Follow-up Date' }}</label>
+            <input type="date" v-model="followupForm.next_follow_date" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" @click="closeFollowupModal">{{ t('common.cancel') }}</button>
+          <button class="btn-primary" @click="saveFollowup">{{ t('common.save') }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Followup Confirmation -->
+    <div v-if="deletingFollowup" class="modal-overlay" @click.self="cancelDeleteFollowup">
+      <div class="modal confirm-modal">
+        <div class="modal-header">
+          <h2>{{ t('requirementDetail.deleteFollowup') || 'Delete Follow-up' }}</h2>
+        </div>
+        <div class="modal-body">
+          <p>{{ t('requirementDetail.deleteFollowupConfirm') || 'Are you sure you want to delete this follow-up record?' }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" @click="cancelDeleteFollowup">{{ t('common.cancel') }}</button>
+          <button class="btn-danger" @click="deleteFollowup">{{ t('common.delete') }}</button>
         </div>
       </div>
     </div>
@@ -414,5 +681,365 @@ onMounted(fetchRequirement)
   text-align: center;
   color: #64748b;
   padding: 40px;
+}
+
+/* Followups Section */
+.followups-card {
+  margin-top: 16px;
+}
+
+.followups-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.followups-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.btn-primary-sm {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary-sm:hover {
+  background: #1d4ed8;
+}
+
+.btn-primary-sm svg {
+  width: 16px;
+  height: 16px;
+}
+
+.no-followups {
+  text-align: center;
+  color: #94a3b8;
+  padding: 24px;
+  font-size: 14px;
+}
+
+.followups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.followup-item {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.followup-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.followup-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.followup-avatar .initials {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.followup-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.followup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.followup-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.followup-date {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.followup-location {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.followup-location svg {
+  width: 14px;
+  height: 14px;
+}
+
+.followup-body {
+  font-size: 13px;
+  color: #475569;
+}
+
+.followup-body p {
+  margin: 0 0 4px 0;
+}
+
+.followup-body .next-follow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #2563eb;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.followup-body .next-follow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.followup-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.btn-icon-sm {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-icon-sm svg {
+  width: 14px;
+  height: 14px;
+  color: #64748b;
+}
+
+.btn-icon-sm:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.btn-icon-sm.danger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.btn-icon-sm.danger:hover svg {
+  color: #ef4444;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.btn-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-close:hover {
+  background: #f1f5f9;
+}
+
+.btn-close svg {
+  width: 20px;
+  height: 20px;
+  color: #64748b;
+}
+
+.modal-body {
+  padding: 24px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.required {
+  color: #ef4444;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background: white;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: #2563eb;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.btn-secondary {
+  padding: 10px 16px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.btn-primary {
+  padding: 10px 16px;
+  background: #2563eb;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.btn-danger {
+  padding: 10px 16px;
+  background: #ef4444;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.confirm-modal .modal-body p {
+  font-size: 14px;
+  color: #1e293b;
+  margin: 0;
 }
 </style>

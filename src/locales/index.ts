@@ -1,6 +1,6 @@
 import { createI18n } from 'vue-i18n'
-import en from './en.js'
-import zhCN from './zh-CN.js'
+import en from './en'
+import zhCN from './zh-CN'
 
 const savedLocale = localStorage.getItem('locale') || 'en'
 

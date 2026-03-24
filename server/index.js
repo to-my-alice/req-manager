@@ -202,6 +202,65 @@ app.delete('/api/requirements/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// ============ REQUIREMENTS FOLLOWUPS ============
+app.get('/api/requirements/:id/followups', (req, res) => {
+  const followups = db.prepare(`
+    SELECT f.*, u.name as follower_name, u.avatar as follower_avatar
+    FROM requirements_followups f
+    LEFT JOIN users u ON f.follower_id = u.id
+    WHERE f.requirement_id = ?
+    ORDER BY f.follow_date DESC, f.created_at DESC
+  `).all(req.params.id);
+  res.json(followups);
+});
+
+app.post('/api/requirements/:id/followups', (req, res) => {
+  const { follower_id, follow_date, location, content, conclusion, next_follow_date } = req.body;
+  if (!follower_id || !follow_date || !content) {
+    return res.status(400).json({ error: 'follower_id, follow_date, and content are required' });
+  }
+
+  const result = db.prepare(`
+    INSERT INTO requirements_followups (requirement_id, follower_id, follow_date, location, content, conclusion, next_follow_date)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run(req.params.id, follower_id, follow_date, location, content, conclusion, next_follow_date);
+
+  const newFollowup = db.prepare(`
+    SELECT f.*, u.name as follower_name, u.avatar as follower_avatar
+    FROM requirements_followups f
+    LEFT JOIN users u ON f.follower_id = u.id
+    WHERE f.id = ?
+  `).get(result.lastInsertRowid);
+  res.json(newFollowup);
+});
+
+app.put('/api/followups/:id', (req, res) => {
+  const { follower_id, follow_date, location, content, conclusion, next_follow_date } = req.body;
+  if (!follower_id || !follow_date || !content) {
+    return res.status(400).json({ error: 'follower_id, follow_date, and content are required' });
+  }
+
+  db.prepare(`
+    UPDATE requirements_followups SET
+      follower_id = ?, follow_date = ?, location = ?, content = ?,
+      conclusion = ?, next_follow_date = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
+  `).run(follower_id, follow_date, location, content, conclusion, next_follow_date, req.params.id);
+
+  const updated = db.prepare(`
+    SELECT f.*, u.name as follower_name, u.avatar as follower_avatar
+    FROM requirements_followups f
+    LEFT JOIN users u ON f.follower_id = u.id
+    WHERE f.id = ?
+  `).get(req.params.id);
+  res.json(updated);
+});
+
+app.delete('/api/followups/:id', (req, res) => {
+  db.prepare('DELETE FROM requirements_followups WHERE id = ?').run(req.params.id);
+  res.json({ success: true });
+});
+
 // ============ STATS ============
 app.get('/api/stats', (req, res) => {
   const total = db.prepare('SELECT COUNT(*) as count FROM requirements').get().count;

@@ -1,26 +1,27 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
+import type { Project, ProjectFormData } from '@/types'
 
 const { t } = useI18n()
 const router = useRouter()
 
-const projects = ref([])
+const projects = ref<Project[]>([])
 const loading = ref(true)
 const searchQuery = ref('')
 
 const showModal = ref(false)
-const editingProject = ref(null)
-const deletingProject = ref(null)
+const editingProject = ref<Project | null>(null)
+const deletingProject = ref<Project | null>(null)
 
-const form = ref({
+const form = ref<ProjectFormData>({
   name: '',
   description: '',
   color: '#2563eb'
 })
 
-const errors = ref({})
+const errors = ref<Record<string, string>>({})
 
 const colors = [
   { value: '#2563eb', label: 'Blue' },
@@ -33,7 +34,7 @@ const colors = [
   { value: '#ec4899', label: 'Pink' },
 ]
 
-const fetchProjects = async () => {
+const fetchProjects = async (): Promise<void> => {
   try {
     const params = new URLSearchParams()
     if (searchQuery.value) params.append('search', searchQuery.value)
@@ -47,42 +48,42 @@ const fetchProjects = async () => {
   }
 }
 
-const getProgressPercent = (project) => {
+const getProgressPercent = (project: Project): number => {
   if (!project.requirement_count) return 0
-  return Math.round((project.completed_count / project.requirement_count) * 100)
+  return Math.round((project.completed_count! / project.requirement_count) * 100)
 }
 
-const viewProject = (id) => {
+const viewProject = (id: string | number): void => {
   router.push(`/requirements?project_id=${id}`)
 }
 
 // Modal handlers
-const openCreateModal = () => {
+const openCreateModal = (): void => {
   editingProject.value = null
   form.value = { name: '', description: '', color: '#2563eb' }
   errors.value = {}
   showModal.value = true
 }
 
-const openEditModal = (project) => {
+const openEditModal = (project: Project): void => {
   editingProject.value = project
   form.value = { name: project.name, description: project.description || '', color: project.color }
   errors.value = {}
   showModal.value = true
 }
 
-const closeModal = () => {
+const closeModal = (): void => {
   showModal.value = false
   editingProject.value = null
 }
 
-const validate = () => {
+const validate = (): boolean => {
   errors.value = {}
   if (!form.value.name.trim()) errors.value.name = t('validation.titleRequired')
   return Object.keys(errors.value).length === 0
 }
 
-const saveProject = async () => {
+const saveProject = async (): Promise<void> => {
   if (!validate()) return
 
   try {
@@ -111,15 +112,15 @@ const saveProject = async () => {
   }
 }
 
-const confirmDelete = (project) => {
+const confirmDelete = (project: Project): void => {
   deletingProject.value = project
 }
 
-const cancelDelete = () => {
+const cancelDelete = (): void => {
   deletingProject.value = null
 }
 
-const deleteProject = async () => {
+const deleteProject = async (): Promise<void> => {
   if (!deletingProject.value) return
 
   try {
@@ -140,7 +141,7 @@ const deleteProject = async () => {
   }
 }
 
-const handleSearch = () => {
+const handleSearch = (): void => {
   loading.value = true
   fetchProjects()
 }
