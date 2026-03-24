@@ -1,118 +1,122 @@
-# IT Requirement Management System
+# ReqManager - IT 需求管理系统
 
-A personal IT requirement management web application for tracking and managing project requirements.
+IT 需求管理系统是一个帮助团队在整个项目生命周期中捕获、组织、跟踪和管理 IT 需求的 Web 平台。
 
-## Technology Stack
+## 功能特性
 
-### Frontend
-- **Vue 3** - Progressive JavaScript framework
-- **Vue Router** - Client-side routing
-- **Vue I18n** - Internationalization (English / 中文)
-- **Vite** - Next-generation frontend tooling
+### 仪表盘
+- 概览统计：需求总数、进行中、已完成、已逾期
+- 最近需求列表
+- 项目进度展示
 
-### Backend
-- **Express.js** - Web application framework
-- **better-sqlite3** - SQLite3 database driver
-- **CORS** - Cross-origin resource sharing
+### 需求管理
+- 创建、编辑、删除需求
+- 多维度筛选：状态、优先级、项目
+- 全文搜索
+- 需求详情查看
 
-### Database
-- **SQLite** - Lightweight, file-based database
+### 项目管理
+- 项目卡片展示
+- 需求进度可视化
+- 快速跳转查看项目相关需求
 
-## Features
+### 用户管理
+- 用户角色管理（管理员、经理、成员）
+- 超级管理员专属账号
 
-- **Dashboard** - Overview with stats, recent requirements, and project progress
-- **Requirements** - Full CRUD with filtering, search, and pagination
-- **Projects** - Project management with requirement tracking
-- **Users** - User management with role assignment
-- **i18n** - Bilingual support (English / Chinese)
+## 技术栈
 
-## Quick Start
+- **前端**: Vue 3 + Vite
+- **路由**: Vue Router 4
+- **国际化**: Vue I18n
+- **后端 API**: Node.js + Express + SQLite
 
-### 1. Install Dependencies
+## 安装运行
+
+### 前置要求
+
+- Node.js 18+
+- npm 或 yarn
+
+### 安装步骤
 
 ```bash
-# Install frontend dependencies
+# 进入项目目录
 cd req-manager
+
+# 安装依赖
 npm install
 
-# Install backend dependencies
-cd server
-npm install
-cd ..
-```
-
-### 2. Start Backend Server
-
-```bash
-cd server
-npm start
-```
-
-Backend runs at: http://localhost:3001
-
-### 3. Start Frontend Dev Server
-
-```bash
+# 启动开发服务器
 npm run dev
 ```
 
-Frontend runs at: http://localhost:5173
+访问 http://localhost:5173
 
-## API Endpoints
+### 启动后端 API（如果需要）
 
-### Users
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/users | List all users |
-| GET | /api/users/:id | Get user by ID |
-| POST | /api/users | Create user |
-| PUT | /api/users/:id | Update user |
-| DELETE | /api/users/:id | Delete user |
-
-### Projects
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/projects | List all projects |
-| GET | /api/projects/:id | Get project by ID |
-| POST | /api/projects | Create project |
-| PUT | /api/projects/:id | Update project |
-| DELETE | /api/projects/:id | Delete project |
-
-### Requirements
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/requirements | List all requirements |
-| GET | /api/requirements/:id | Get requirement by ID |
-| POST | /api/requirements | Create requirement |
-| PUT | /api/requirements/:id | Update requirement |
-| DELETE | /api/requirements/:id | Delete requirement |
-
-### Stats
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/stats | Dashboard statistics |
-
-## Database
-
-The SQLite database file is located at:
-```
-server/reqmanager.db
+```bash
+cd req-manager/server
+npm install
+npm run dev
 ```
 
-Data is automatically seeded on first run with sample users, projects, and requirements.
+API 服务运行在 http://localhost:3001
 
-## Project Structure
+## 使用指南
+
+### 登录
+
+使用超级管理员账号登录：
+
+| 字段 | 值 |
+|------|-----|
+| 用户名 | Alice |
+| 密码 | Aa135246@ |
+
+### 修改密码
+
+1. 点击左下角用户头像
+2. 在下拉菜单中选择「修改密码」
+3. 输入当前密码和新密码
+
+### 创建需求
+
+1. 进入「需求」页面
+2. 点击右上角「新建需求」按钮
+3. 填写表单并保存
+
+### 筛选需求
+
+- 使用顶部筛选栏按状态、优先级、项目筛选
+- 使用搜索框按标题搜索
+- 点击「清除」恢复显示全部
+
+### 查看项目需求
+
+1. 进入「项目」页面
+2. 点击任意项目的「查看需求」按钮
+3. 将自动跳转到需求页面并筛选该项目
+
+## 项目结构
 
 ```
 req-manager/
 ├── src/
-│   ├── pages/           # Page components
-│   ├── router/          # Vue Router config
-│   ├── locales/         # i18n translation files
-│   ├── App.vue          # Root component
-│   └── main.js          # Entry point
-└── server/
-    ├── index.js         # Express server
-    ├── database.js      # SQLite setup & seed data
-    └── reqmanager.db    # SQLite database
+│   ├── main.js           # 应用入口
+│   ├── App.vue           # 根组件
+│   ├── router/           # 路由配置
+│   ├── pages/            # 页面组件
+│   └── locales/          # 国际化文件
+├── server/               # 后端 API（如果存在）
+└── public/               # 静态资源
 ```
+
+## 相关文档
+
+- [PRD.md](./PRD.md) - 产品需求文档
+- [Design.pen](./Design.pen) - 界面原型设计（需用 Pencil 打开）
+
+## License
+
+Private - All Rights Reserved

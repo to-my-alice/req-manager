@@ -127,7 +127,32 @@ export default {
     cannotDelete: '无法删除已分配需求的用户',
     admin: '管理员',
     manager: '经理',
-    member: '成员'
+    member: '成员',
+    super_admin: '超级管理员'
+  },
+  login: {
+    title: '超级管理员登录',
+    subtitle: '请登录以访问系统',
+    username: '用户名',
+    usernamePlaceholder: '请输入用户名',
+    password: '密码',
+    passwordPlaceholder: '请输入密码',
+    loginButton: '登录',
+    logout: '退出登录',
+    changePassword: '修改密码',
+    oldPassword: '当前密码',
+    oldPasswordPlaceholder: '请输入当前密码',
+    newPassword: '新密码',
+    newPasswordPlaceholder: '请输入新密码',
+    confirmPassword: '确认密码',
+    confirmPasswordPlaceholder: '请再次输入新密码',
+    oldPasswordError: '当前密码错误',
+    newPasswordLength: '新密码至少6个字符',
+    passwordMismatch: '两次输入的密码不一致',
+    passwordChangedSuccess: '密码修改成功',
+    errorEmpty: '请输入用户名和密码',
+    errorInvalid: '用户名或密码错误',
+    hint: '默认账号：Alice / Aa135246(at)'
   },
   validation: {
     nameRequired: '姓名为必填项',

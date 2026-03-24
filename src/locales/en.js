@@ -127,7 +127,32 @@ export default {
     cannotDelete: 'Cannot delete user with assigned requirements',
     admin: 'Admin',
     manager: 'Manager',
-    member: 'Member'
+    member: 'Member',
+    super_admin: 'Super Admin'
+  },
+  login: {
+    title: 'Super Admin Login',
+    subtitle: 'Please sign in to access the system',
+    username: 'Username',
+    usernamePlaceholder: 'Enter username',
+    password: 'Password',
+    passwordPlaceholder: 'Enter password',
+    loginButton: 'Sign In',
+    logout: 'Logout',
+    changePassword: 'Change Password',
+    oldPassword: 'Current Password',
+    oldPasswordPlaceholder: 'Enter current password',
+    newPassword: 'New Password',
+    newPasswordPlaceholder: 'Enter new password',
+    confirmPassword: 'Confirm Password',
+    confirmPasswordPlaceholder: 'Confirm new password',
+    oldPasswordError: 'Current password is incorrect',
+    newPasswordLength: 'New password must be at least 6 characters',
+    passwordMismatch: 'Passwords do not match',
+    passwordChangedSuccess: 'Password changed successfully',
+    errorEmpty: 'Please enter username and password',
+    errorInvalid: 'Invalid username or password',
+    hint: "Default account: Alice / Aa135246(at)"
   },
   validation: {
     nameRequired: 'Name is required',

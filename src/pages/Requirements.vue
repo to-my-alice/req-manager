@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 
 const requirements = ref([])
 const projects = ref([])
@@ -97,7 +98,12 @@ const createRequirement = () => {
 
 const clearFilters = () => {
   filters.value = { status: '', priority: '', project_id: '', search: '' }
-  fetchRequirements()
+  // Update URL to remove project_id if present
+  if (route.query.project_id) {
+    router.replace({ path: '/requirements', query: {} })
+  } else {
+    fetchRequirements()
+  }
 }
 
 const hasActiveFilters = computed(() => {
@@ -105,8 +111,24 @@ const hasActiveFilters = computed(() => {
 })
 
 onMounted(() => {
+  // Check for project_id in URL query params
+  if (route.query.project_id) {
+    filters.value.project_id = route.query.project_id
+  }
   fetchRequirements()
   fetchProjects()
+})
+
+// Watch for route changes to update project filter
+watch(() => route.query.project_id, (newProjectId) => {
+  if (newProjectId) {
+    filters.value.project_id = newProjectId
+    fetchRequirements()
+  } else if (filters.value.project_id) {
+    // Clear project filter when navigating without project_id
+    filters.value.project_id = ''
+    fetchRequirements()
+  }
 })
 </script>
 

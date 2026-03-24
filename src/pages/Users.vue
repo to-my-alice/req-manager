@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
@@ -19,6 +19,42 @@ const form = ref({
 
 const roles = ['admin', 'manager', 'member']
 const errors = ref({})
+
+// Check if current user is super admin
+const isSuperAdmin = computed(() => {
+  const storedUser = localStorage.getItem('currentUser')
+  if (storedUser) {
+    try {
+      const user = JSON.parse(storedUser)
+      return user.role === 'Super Admin'
+    } catch (e) {
+      return false
+    }
+  }
+  return false
+})
+
+// Super admin user (Alice)
+const superAdminUser = {
+  id: 'super-admin',
+  name: 'Alice',
+  email: 'alice@admin.com',
+  role: 'super_admin',
+  avatar: 'https://i.pravatar.cc/150?u=alice'
+}
+
+// Display users list (includes super admin if logged in as super admin)
+const displayUsers = computed(() => {
+  if (isSuperAdmin.value) {
+    return [superAdminUser, ...users.value]
+  }
+  return users.value
+})
+
+// Check if user is super admin
+const isUserSuperAdmin = (user) => {
+  return user.role === 'super_admin'
+}
 
 const fetchUsers = async () => {
   try {
@@ -145,7 +181,7 @@ onMounted(fetchUsers)
 
     <div class="content" v-if="!loading">
       <div class="users-grid">
-        <div v-for="user in users" :key="user.id" class="user-card">
+        <div v-for="user in displayUsers" :key="user.id" class="user-card">
           <div class="user-avatar">
             <img v-if="user.avatar" :src="user.avatar" :alt="user.name" />
             <span v-else class="initials">{{ getInitials(user.name) }}</span>
@@ -156,17 +192,28 @@ onMounted(fetchUsers)
             <span class="role-badge" :class="getRoleClass(user.role)">{{ getRoleLabel(user.role) }}</span>
           </div>
           <div class="user-actions">
-            <button class="btn-icon" @click="openEditModal(user)" :title="t('common.edit')">
+            <button
+              v-if="!isUserSuperAdmin(user)"
+              class="btn-icon"
+              @click="openEditModal(user)"
+              :title="t('common.edit')"
+            >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
             </button>
-            <button class="btn-icon danger" @click="confirmDelete(user)" :title="t('common.delete')">
+            <button
+              v-if="!isUserSuperAdmin(user)"
+              class="btn-icon danger"
+              @click="confirmDelete(user)"
+              :title="t('common.delete')"
+            >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
             </button>
+            <span v-else class="super-admin-badge">Super Admin</span>
           </div>
         </div>
       </div>
@@ -375,6 +422,16 @@ onMounted(fetchUsers)
 .role-admin { background: #fef3c7; color: #d97706; }
 .role-manager { background: #dbeafe; color: #2563eb; }
 .role-member { background: #f1f5f9; color: #64748b; }
+.role-super_admin { background: #f3e8ff; color: #7c3aed; }
+
+.super-admin-badge {
+  font-size: 11px;
+  font-weight: 500;
+  color: #7c3aed;
+  background: #f3e8ff;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
 
 .user-actions {
   display: flex;
