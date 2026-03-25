@@ -566,6 +566,40 @@ DELETE /requirements/:id
 
 ---
 
+### List Recent Follow-ups
+
+```
+GET /followups/recent?limit=10
+```
+
+**Query Parameters:**
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| limit | integer | No | Maximum number of follow-ups to return (default: 10) |
+
+**Response:**
+```json
+[
+  {
+    "id": 1,
+    "requirement_id": 1,
+    "follower_id": 1,
+    "follower_name": "Alice Chen",
+    "follower_avatar": "https://i.pravatar.cc/150?u=alice",
+    "follow_date": "2026-03-24",
+    "location": "Conference Room A",
+    "content": "Discussed project timeline and resource allocation",
+    "conclusion": "Agreed on Q2 delivery schedule",
+    "next_follow_date": "2026-03-31",
+    "requirement_title": "User authentication flow redesign",
+    "created_at": "2026-03-24 12:00:00",
+    "updated_at": "2026-03-24 12:00:00"
+  }
+]
+```
+
+---
+
 ## Requirements Followups
 
 ### List Follow-ups for Requirement
