@@ -2,9 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import type { Requirement, ProjectProgress, RequirementStatus, Priority } from '@/types'
+import type { Requirement, ProjectProgress, RequirementStatus, Priority, Status, Followup } from '@/types'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const router = useRouter()
 
 interface Stats {
@@ -17,6 +17,8 @@ interface Stats {
 const stats = ref<Stats>({ total: 0, inProgress: 0, completed: 0, overdue: 0 })
 const recentRequirements = ref<Requirement[]>([])
 const projectProgress = ref<ProjectProgress[]>([])
+const statuses = ref<Status[]>([])
+const recentFollowups = ref<Followup[]>([])
 const loading = ref(true)
 
 const fetchStats = async (): Promise<void> => {
@@ -41,15 +43,41 @@ const fetchStats = async (): Promise<void> => {
   }
 }
 
-const getStatusClass = (status: RequirementStatus): string => {
-  const classes: Record<RequirementStatus, string> = {
-    draft: 'status-draft',
-    in_review: 'status-review',
-    approved: 'status-approved',
-    in_progress: 'status-progress',
-    completed: 'status-completed'
+const fetchStatuses = async (): Promise<void> => {
+  try {
+    const res = await fetch('http://localhost:3001/api/statuses')
+    statuses.value = await res.json()
+  } catch (err) {
+    console.error('Failed to fetch statuses:', err)
   }
-  return classes[status] || 'status-draft'
+}
+
+const fetchRecentFollowups = async (): Promise<void> => {
+  try {
+    const res = await fetch('http://localhost:3001/api/followups/recent?limit=10')
+    recentFollowups.value = await res.json()
+  } catch (err) {
+    console.error('Failed to fetch recent followups:', err)
+  }
+}
+
+const getStatusClass = (status: RequirementStatus): string => {
+  const statusItem = statuses.value.find(s => s.name_en === status)
+  return statusItem ? '' : 'status-draft'
+}
+
+const getStatusStyle = (status: RequirementStatus): Record<string, string> => {
+  const statusItem = statuses.value.find(s => s.name_en === status)
+  if (statusItem) {
+    return {
+      background: statusItem.color + '20',
+      color: statusItem.color
+    }
+  }
+  return {
+    background: '#f1f5f9',
+    color: '#64748b'
+  }
 }
 
 const getPriorityClass = (priority: Priority): string => {
@@ -72,21 +100,31 @@ const viewRequirement = (id: string | number): void => {
 }
 
 const getStatusLabel = (status: RequirementStatus): string => {
-  const labels: Record<RequirementStatus, string> = {
-    draft: t('requirements.draft'),
-    in_review: t('requirements.inReview'),
-    approved: t('requirements.approved'),
-    in_progress: t('requirements.inProgress'),
-    completed: t('requirements.completed')
+  const statusItem = statuses.value.find(s => s.name_en === status)
+  if (statusItem) {
+    return locale.value === 'zh-CN' ? statusItem.name : statusItem.name_en
   }
-  return labels[status] || status
+  return status
 }
 
 const getPriorityLabel = (priority: Priority): string => {
   return t(`requirements.${priority}`)
 }
 
-onMounted(fetchStats)
+const formatDateShort = (date: string | null | undefined): string => {
+  if (!date) return '-'
+  return new Date(date).toLocaleDateString(locale.value === 'zh-CN' ? 'zh-CN' : 'en-US', { month: 'short', day: 'numeric' })
+}
+
+const viewFollowup = (requirementId: string | number): void => {
+  router.push(`/requirements/${requirementId}`)
+}
+
+onMounted(() => {
+  fetchStats()
+  fetchStatuses()
+  fetchRecentFollowups()
+})
 </script>
 
 <template>
@@ -157,7 +195,7 @@ onMounted(fetchStats)
               <thead>
                 <tr>
                   <th>{{ t('dashboard.id') }}</th>
-                  <th>{{ t('dashboard.title') }}</th>
+                  <th>{{ t('dashboard.titleLabel') }}</th>
                   <th>{{ t('dashboard.status') }}</th>
                   <th>{{ t('dashboard.priority') }}</th>
                   <th>{{ t('dashboard.project') }}</th>
@@ -167,7 +205,7 @@ onMounted(fetchStats)
                 <tr v-for="req in recentRequirements" :key="req.id" @click="viewRequirement(req.id)">
                   <td class="req-id">REQ-{{ String(req.id).padStart(4, '0') }}</td>
                   <td class="req-title">{{ req.title }}</td>
-                  <td><span class="badge" :class="getStatusClass(req.status)">{{ getStatusLabel(req.status) }}</span></td>
+                  <td><span class="badge" :style="getStatusStyle(req.status)">{{ getStatusLabel(req.status) }}</span></td>
                   <td><span class="badge" :class="getPriorityClass(req.priority)">{{ getPriorityLabel(req.priority) }}</span></td>
                   <td>{{ req.project_name || '-' }}</td>
                 </tr>
@@ -191,6 +229,30 @@ onMounted(fetchStats)
               </div>
               <div class="progress-percent">{{ getProgressPercent(project) }}% {{ t('dashboard.complete') }}</div>
             </div>
+          </div>
+        </div>
+
+        <!-- Recent Followups -->
+        <div class="card recent-followups">
+          <h2>{{ t('dashboard.recentFollowups') || 'Recent Follow-ups' }}</h2>
+          <div class="followups-list" v-if="recentFollowups.length > 0">
+            <div v-for="followup in recentFollowups" :key="followup.id" class="followup-item" @click="viewFollowup(followup.requirement_id)">
+              <div class="followup-avatar">
+                <img v-if="followup.follower_avatar" :src="followup.follower_avatar" :alt="followup.follower_name" />
+                <span v-else class="initials">{{ followup.follower_name?.charAt(0) || '?' }}</span>
+              </div>
+              <div class="followup-content">
+                <div class="followup-header">
+                  <span class="followup-name">{{ followup.follower_name }}</span>
+                  <span class="followup-date">{{ formatDateShort(followup.follow_date) }}</span>
+                </div>
+                <div class="followup-req-title">{{ followup.requirement_title }}</div>
+                <div class="followup-preview">{{ followup.content }}</div>
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-followups">
+            {{ t('dashboard.noFollowups') || 'No follow-ups yet' }}
           </div>
         </div>
       </div>
@@ -398,5 +460,100 @@ tr:hover {
 .progress-percent {
   font-size: 12px;
   color: #64748b;
+}
+
+/* Recent Followups */
+.followups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.followup-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.followup-item:hover {
+  background: #f1f5f9;
+}
+
+.followup-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.followup-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.followup-avatar .initials {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.followup-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.followup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.followup-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.followup-date {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.followup-req-title {
+  font-size: 12px;
+  color: #2563eb;
+  font-weight: 500;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.followup-preview {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.empty-followups {
+  text-align: center;
+  color: #94a3b8;
+  padding: 24px;
+  font-size: 14px;
 }
 </style>

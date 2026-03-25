@@ -261,6 +261,21 @@ app.delete('/api/followups/:id', (req, res) => {
   res.json({ success: true });
 });
 
+// ============ RECENT FOLLOWUPS ============
+app.get('/api/followups/recent', (req, res) => {
+  const limit = parseInt(req.query.limit) || 10;
+  const followups = db.prepare(`
+    SELECT f.*, u.name as follower_name, u.avatar as follower_avatar,
+           r.title as requirement_title
+    FROM requirements_followups f
+    LEFT JOIN users u ON f.follower_id = u.id
+    LEFT JOIN requirements r ON f.requirement_id = r.id
+    ORDER BY f.created_at DESC
+    LIMIT ?
+  `).all(limit);
+  res.json(followups);
+});
+
 // ============ STATS ============
 app.get('/api/stats', (req, res) => {
   const total = db.prepare('SELECT COUNT(*) as count FROM requirements').get().count;
